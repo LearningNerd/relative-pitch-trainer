@@ -1,0 +1,46 @@
+body {
+	max-width: 800px;
+	text-align: center;
+	margin: 0 auto;
+}
+
+button {
+	font-size:1.5em;
+	padding:0.5em;
+}
+
+
+.container {
+	width: 700px;
+	margin: 0 auto;
+}
+
+h1 {
+	font-size:1.8em;
+	text-align:center;
+}
+#intervalinfo, #stats {
+	clear: both;
+	margin: 1em 0.5em;
+	font-size:1.1em;
+	text-align:center;
+	color: black;
+	background:#eee;
+	padding: 1em;
+}
+
+.correct {
+	color:green;
+	font-weight: bold;
+}
+.incorrect, .next {
+	color:red;
+	font-weight: bold;
+}
+
+.left {
+	float:left;
+}
+.right {
+	float:right;
+}

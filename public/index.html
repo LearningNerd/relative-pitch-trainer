@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+		<head>
+		<title>Relative Pitch Trainer</title>
+
+		<link href="style.css" rel="stylesheet" type="text/css">
+	</head>
+
+	<body>
+
+		<h1>Relative Pitch Trainer</h1>
+		<span id="midimessages">Checking MIDI...</span>
+
+		<div id="intervalinfo"><strong>Instructions:</strong> Following the base note that will be shown first for reference, listen to each following note and play it on the keyboard (via connected MIDI instrument or with the on-screen piano below)</div>
+		<div id="stats">...Loading stats...</div>
+		<button id="play">Start!</button> <button id="reset">Reset Data</button>
+		<div class="container">
+			<canvas id="myCanvas" width="500" height="200"></canvas>
+			<div id="piano"></div>
+		</div>
+
+		<script type="text/javascript" src="qwerty-hancock.min.js"></script>
+		<script type="text/javascript" src="https://unpkg.com/vexflow/releases/vexflow-debug.js"></script>
+		<script type="text/javascript" src="/controllers/relative-pitch-trainer.js"></script>
+	</body>
+</html>

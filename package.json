@@ -1,0 +1,16 @@
+{
+  "name": "relative-pitch-trainer",
+  "version": "1.0.0",
+  "description": "Web app for practicing relative pitch by listening to and playing notes, melodic dictation style, one note at a time. Uses the web MIDI and web audio APIs, VexFlow, and Qwerty Hancock",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Liz Krane",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "mongodb": "^2.2.11"
+  }
+}
