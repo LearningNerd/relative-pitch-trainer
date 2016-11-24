@@ -42,6 +42,7 @@ function statsHandler (db) {
 				'rangeStart': req.body.rangeStart,
 				'rangeEnd': req.body.rangeEnd,
 				'sessionIntervals': req.body.sessionIntervals,
+				'timeStamp': req.body.timeStamp,
 				'refNote': req.body.refNote,
 				'totalTime': req.body.totalTime,
 				'questions': req.body.questions

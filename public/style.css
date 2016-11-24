@@ -9,7 +9,6 @@ button {
 	padding:0.5em;
 }
 
-
 .container {
 	width: 700px;
 	margin: 0 auto;
@@ -21,12 +20,21 @@ h1 {
 }
 #intervalinfo, #stats {
 	clear: both;
+	overflow: hidden;
 	margin: 1em 0.5em;
 	font-size:1.1em;
 	text-align:center;
 	color: black;
 	background:#eee;
 	padding: 1em;
+}
+
+#stats {
+	margin-top:2em;
+}
+
+#piano {
+	margin-bottom:2em;
 }
 
 .correct {
@@ -40,7 +48,11 @@ h1 {
 
 .left {
 	float:left;
+	box-sizing: border-box;
+	width: 50%;
 }
 .right {
 	float:right;
+	box-sizing: border-box;
+	width: 50%;
 }

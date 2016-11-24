@@ -17,6 +17,7 @@
 		rangeStart: RANGE_START,
 		rangeEnd:RANGE_END,
 		sessionIntervals: SESSION_INTERVALS,
+		timeStamp: 0,
 		refNote: null,
 		totalTime: 0,
 		questions: []
@@ -36,14 +37,14 @@
 					answer: 65,
 					totalTime: 350,
 					attempts: [
-						{notes: [64], time: 200},
-						{notes: [65], time: 135}
+						{note: 64, time: 200},
+						{note: 65, time: 135}
 					]
 				},
 				{	answer: 67,
 					totalTime: 500,
 					attempts: [
-						{notes: [67], time: 450}
+						{note: 67, time: 450}
 					]
 				}
 			],
@@ -66,17 +67,24 @@
 	var ctx = myCanvas.getContext("2d");
 
 
-	// ************************** ACCESS API, GET/SET FROM DB ***************************************
+// **********************************   ACCESS API, GET/SET FROM DB   ***************************************
 
-	function updateStatsView (data) {
-		console.log('updateStatsView called.');
-		console.log(data);
-		if (data == null || data === 'null') {
-			statsBox.innerHTML = 'No stats in the database.';
+	// request data or send sessionStats data:
+	function ajaxRequest (method, url, callback) {
+		var xmlhttp = new XMLHttpRequest();
+
+		xmlhttp.onreadystatechange = function () {
+			if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+				callback(xmlhttp.response);
+			}
+		};
+
+		xmlhttp.open(method, url, true);
+		if (method === 'POST') {
+			xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+			xmlhttp.send( JSON.stringify(sessionStats) );
 		} else {
-			var statsObject = JSON.parse(data);
-			statsBox.innerHTML = JSON.stringify(statsObject);
-			console.log(JSON.stringify(statsObject));
+			xmlhttp.send();
 		}
 	}
 
@@ -89,7 +97,7 @@
 	ready(ajaxRequest('GET', apiUrl, updateStatsView));
 
 
-	// ****************   VexFlow setup  ********************
+// ****************************************   VexFlow setup  ***********************************************
 	var VF = Vex.Flow;
 	var renderer = new Vex.Flow.Renderer(myCanvas, Vex.Flow.Renderer.Backends.CANVAS);
 	var stave = new VF.Stave(0, 30, 498);
@@ -114,7 +122,7 @@
 		}
 	}
 
-	// ****************   Web audio API  ********************
+// **********************************   Web audio API   ******************************************
 	var audioCtx = new (window.AudioContext || window.webkitAudioContext);
 	var masterGain = audioCtx.createGain();
 	var nodes = [];
@@ -153,7 +161,7 @@
 		console.log(nodes);
 	}
 
-	// **************************** MIDI INPUT *****************************
+// ***************************************   MIDI INPUT   *************************************************
 	var midi, data;
 	// request MIDI access
 	if (navigator.requestMIDIAccess) {
@@ -214,7 +222,8 @@
 					 			// make a COPY of the array so I don't modify the original:
 								var pressedMidiNotesCopy = pressedMidiNotes.slice();
 
-					 		correctAnswer = checkInput(pressedMidiNotesCopy);
+							// check for answers one note at a time:
+					 		correctAnswer = checkInput(data[1]);
 							refreshViewWithInput(pressedMidiNotesCopy);
 						} else {
 							refreshVexFlowNotes( [ createVexChord(pressedMidiNotes) ] );
@@ -258,7 +267,7 @@
 	}
 
 
-	// *************************** QwertyHancock PIANO!! *******************************
+// **************************************   QwertyHancock PIANO!!   *********************************************
 	// qwerty hancock:
 	var mykeyboard = new QwertyHancock({
 		id: 'piano',
@@ -287,7 +296,8 @@
 					// Refresh VexFlow with current reference note (the previous quiz note) and currently pressed notes:
 					// make a COPY of the array so I don't modify the original:
 					var pressedMidiNotesCopy = pressedMidiNotes.slice();
-				correctAnswer = checkInput(pressedMidiNotesCopy);
+				// check for answers one note at a time:
+				correctAnswer = checkInput(midiNum);
 				refreshViewWithInput(pressedMidiNotesCopy);
 			 } else {
 				 refreshVexFlowNotes( [ createVexChord(pressedMidiNotes) ] );
@@ -332,10 +342,7 @@
 	}
 
 
-	// ******************* reusable stuff! *****************
-
-
-	// ****** Reusable AJAX STUFF *********
+// ***************************************   reusable stuff!    **************************************************
 
 	function ready (fn) {
 	   if (typeof fn !== 'function') {
@@ -349,27 +356,8 @@
 	   document.addEventListener('DOMContentLoaded', fn, false);
 	}
 
-	function ajaxRequest (method, url, callback) {
-	   var xmlhttp = new XMLHttpRequest();
 
-	   xmlhttp.onreadystatechange = function () {
-		  if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
-			 callback(xmlhttp.response);
-		  }
-	   };
-
-	   xmlhttp.open(method, url, true);
-	   if (method === 'POST') {
-		   xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-		   xmlhttp.send( JSON.stringify(sessionStats) );
-	   } else {
-		   xmlhttp.send();
-	   }
-
-
-	}
-
-	// ******** music stuff ********
+	// *********************   music stuff   ************************
 
 	function randomNoteMidi(rangeStart, rangeEnd) {
 		// Pick a random MIDI note given MIDI notes, within an inclusive range
@@ -377,8 +365,6 @@
 		var max = Math.floor(rangeEnd);
 		return Math.floor(Math.random() * (max - min + 1)) + min;
 	}
-
-
 
 	function createVexChord(midiNumArray) {
 		if (midiNumArray.length === 0) {
@@ -446,13 +432,25 @@
 		}
 	}
 
-	// **************************  QUIZ !  **************************
+// ***************************************    QUIZ !    *************************************************
 	function startSession () {
 		// initialize game!
 		if (quizIndex < 1) {
+
+			// reset stuff between sessions!
+			sessionStats = {
+				sessionLength: SESSION_LENGTH,
+				rangeStart: RANGE_START,
+				rangeEnd:RANGE_END,
+				timeStamp: 0,
+				refNote: null,
+				totalTime: 0,
+				questions: []
+			};
+
 			toggleListeningState();	// set to true! will set to false when sound finishes playing
 			// start the clock for session total time:
-			sessionTime = Date.now();
+			sessionStats.timeStamp = sessionTime = Date.now();
 			console.log('SESSION CLOCK STARTED. sessionTime stamp: ' + sessionTime);
 
 			// set first reference note to be in the middle of the note range:
@@ -526,7 +524,6 @@
 		}
 	}
 
-
 	function runNextQuestion() {
 		// next question index
 		quizIndex++;
@@ -579,44 +576,20 @@
 
 		console.log('%c Sessions: ' + JSON.stringify(sessions),'color:red');
 
+		// update UI
+		messageBox.innerHTML = '<strong>Training session complete!</strong>';
+		mainButton.style.display = 'inline-block';
+		mainButton.textContent = 'Play Again!';
+
+		// reset stuff!! (the rest happens in startSession)
+		quizIndex = 0;
+		quizNotes = [];
+
+		// sends latest sessionStats data to the server:
 		ajaxRequest('POST', apiUrl, function () {
-
-			// TODO: send stats data to the server!
-
-			// reset stuff!! (the rest happens in startSession)
-			quizIndex = 0;
-			quizNotes = [];
-			sessionStats = {
-				sessionLength: SESSION_LENGTH,
-				rangeStart: RANGE_START,
-				rangeEnd:RANGE_END,
-				refNote: null,
-				totalTime: 0,
-				questions: []
-			};
-
-			// CONSOLE LOG ALL THE THINGS!!!!!
-			console.log('sessions: ' + JSON.stringify(sessions));
-			console.log('pressedMidiNotes: ' + JSON.stringify(pressedMidiNotes));
-			console.log('quizNotes: ' + JSON.stringify(quizNotes));
-			console.log('quizIndex: ' + JSON.stringify(quizIndex));
-			console.log('sessionTime: ' + JSON.stringify(sessionTime));
-			console.log('questionTime: ' + JSON.stringify(questionTime));
-			console.log('attemptTime: ' + JSON.stringify(attemptTime));
-			console.log('correctAnswer: ' + JSON.stringify(correctAnswer));
-			console.log('listeningState: ' + JSON.stringify(listeningState));
-			console.log('sessionStats: ' + JSON.stringify(sessionStats));
-
-			// update UI
-			messageBox.innerHTML = '<strong>Training session complete!</strong>';
-			mainButton.style.display = 'inline-block';
-			mainButton.textContent = 'Play Again!';
-
-			// update stats once received from database:
+			// and then update stats once received from database:
 			ajaxRequest('GET', apiUrl, updateStatsView);
 		});
-
-
 	}
 
 	function updateUICorrectAnswer() {
@@ -628,21 +601,21 @@
 	}
 
 	// check pressedMidiNotes (global array) for correct answer and refresh VexFlow accordingly
-	function checkInput (pressedMidiNotesArray) {
+	function checkInput (midiNum) {
 		console.log('checkInput.');
 
 		attemptTime = Date.now() - attemptTime;
 		console.log('Saving stats. Attempt time: ' + attemptTime);
 
 
-		// save to stats! (only if at least 1 note is being pressed)
-		if (pressedMidiNotesArray.length > 0) {
-			sessionStats.questions[quizIndex-1].attempts.push( {notes: pressedMidiNotesArray, time: attemptTime} );
+		// save to stats!
+		if (midiNum != null) {
+			sessionStats.questions[quizIndex-1].attempts.push( {note: midiNum, time: attemptTime} );
 			console.log("%c Attempt saved to sessionStats: " + JSON.stringify( sessionStats), "color: blue;" );
 		}
 
 		// Check if input is correct -- pressing ONE correct key!
-		if (pressedMidiNotesArray.length === 1 && pressedMidiNotesArray[0] === quizNotes[quizIndex]) {
+		if (midiNum != null && midiNum === quizNotes[quizIndex]) {
 			// CORRECT!
 			console.log('CORRECT answer!');
 
@@ -708,7 +681,114 @@
 		}, milliseconds);
 	}
 
-	// **************************  Musical interval thingy!!  **************************
+// ****************************************   Displaying / formatting stats!!!  *********************************************
+	function milliToString(millis) {
+		return (millis / 1000).toFixed(2) + ' seconds';
+	}
+
+	function updateStatsView (data) {
+		console.log('updateStatsView called.');
+		console.log(data);
+		if (data == null || data === 'null') {
+			statsBox.innerHTML = 'No stats in the database.';
+		} else {
+			var statsObjectArray = JSON.parse(data);
+			console.log(JSON.stringify(statsObjectArray));
+
+			// Calculate this session's stats:
+			var timePerQuestion = avgTimePerQuestion([statsObjectArray[statsObjectArray.length - 1]]);
+			var attemptsPerQuestion = avgAttemptsPerQuestion([statsObjectArray[statsObjectArray.length - 1]]);
+			var timePerAttempt = avgTimePerAttempt([statsObjectArray[statsObjectArray.length - 1]]);
+			var attemptOffset = avgAttemptOffset([statsObjectArray[statsObjectArray.length - 1]]);
+
+			// Display and format stats:
+			var statsString = '<div class="left"><p><strong>Last session\'s averages:</strong></p><p>' + milliToString(timePerQuestion) + ' per question<br>';
+			statsString += attemptsPerQuestion.toFixed(2)  + ' attempts per question<br>';
+			statsString += milliToString(timePerAttempt)  + ' per attempt<br>';
+			statsString += attemptOffset.toFixed(2)  + ' notes away from correct answer</p></div>';
+
+			// Calculate all-time stats:
+			timePerQuestion = avgTimePerQuestion(statsObjectArray);
+			attemptsPerQuestion = avgAttemptsPerQuestion(statsObjectArray);
+			timePerAttempt = avgTimePerAttempt(statsObjectArray);
+			attemptOffset = avgAttemptOffset(statsObjectArray);
+
+			// Display and format stats:
+			statsString += '<div class="right"><p><strong>All-time averages:</strong></p><p>' + milliToString(timePerQuestion) + ' per question<br>';
+			statsString += attemptsPerQuestion.toFixed(2)  + ' attempts per question<br>';
+			statsString += milliToString(timePerAttempt)  + ' per attempt<br>';
+			statsString += attemptOffset.toFixed(2)  + ' notes away from correct answer</p></div>';
+
+
+						var testOffsets = [statsObjectArray[statsObjectArray.length - 1]].reduce( function(a, b){
+							return a.concat(
+								b.questions.reduce( function(a, b){
+									return a.concat(
+										b.attempts.map(function(attempt){
+											return {answer: b.answer, note: attempt.note, offset: Math.abs(b.answer - attempt.note)};
+										})
+									);
+								}, [])
+							);
+						}, []);
+			statsString += '<br><br><strong>This session:</strong><br> ' + JSON.stringify(testOffsets) + '<br><br>';
+
+			statsBox.innerHTML = statsString;
+		}
+	}
+
+// *************************************  Generating averages from stats!!!!  ******************************************
+
+	// Average time per question (including all attempts, until getting correct note):
+	function avgTimePerQuestion (sessionsArray) {
+		return sessionsArray.reduce( function(a, b){
+			return a.concat(b.questions);
+		}, []).reduce(function(prev, curr, i, arr){
+			return prev + (curr.totalTime / arr.length);
+		},0);
+	}
+
+	// Average number of attempts per question:
+	function avgAttemptsPerQuestion (sessionsArray) {
+		return sessionsArray.reduce( function(a, b){
+			return a.concat(b.questions);
+		}, []).reduce(function(prev, curr, i, arr){
+			return prev + (curr.attempts.length / arr.length);
+		},0);
+	}
+
+	// Average time per attempt:
+	function avgTimePerAttempt (sessionsArray) {
+		return sessionsArray.reduce( function(a, b){
+			return a.concat(
+				b.questions.reduce( function(a, b){
+					return a.concat(b.attempts);
+				}, [])
+			);
+		}, []).reduce(function(prev, curr, i, arr){
+			return prev + (curr.time / arr.length);
+		},0);
+	}
+
+	// Average offset of each attempt from the correct note:
+	function avgAttemptOffset (sessionsArray) {
+		return sessionsArray.reduce( function(a, b){
+			return a.concat(
+				b.questions.reduce( function(a, b){
+					return a.concat(
+						b.attempts.map(function(attempt){
+							return {answer: b.answer, note: attempt.note };
+						})
+					);
+				}, [])
+			);
+		}, []).reduce(function(prev,curr,i,arr){
+			var delta = Math.abs(curr.answer - curr.note);
+			return prev + (delta / arr.length);
+		}, 0);
+	}
+
+// *************************************  Musical interval thingy!!  ***************************************************
 
 	function identifyInterval (previousNote, currentNote) {
 		var intervalMap = [
@@ -754,7 +834,7 @@
 
 
 
-	// ******************************  Manipulating notes  ************************
+// *******************************************   Manipulating notes   **********************************************
 		// all based on MIDI input:
 	function getInterval(midiNum, interval) {
 		return midiNum + interval;
@@ -768,7 +848,7 @@
 		return midiNum - 12;
 	}
 
-	// ********** MIDI to note conversion *********
+// ******************************************   MIDI to note conversion   ******************************************
 
 	function convertMidiToFrequency(midiNum) {
 	  // midi # 69 = 440 Hz
